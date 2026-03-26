@@ -213,8 +213,8 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
           <CardTitle>2. Escanear prendas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2 relative">
-            <div className="flex-1 relative">
+          <div className="space-y-1">
+            <div className="flex gap-2">
               <Input
                 ref={scanInputRef}
                 value={scanCode}
@@ -224,36 +224,37 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="Escaneá o escribí el código / descripción"
                 disabled={scanning}
+                className="flex-1"
               />
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-10 bottom-full mb-1 w-full border rounded-md bg-background shadow-md divide-y">
-                  {suggestions.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      onMouseDown={() => {
-                        handleScan(p.code);
-                        setShowSuggestions(false);
-                      }}
-                    >
-                      <span className="font-mono text-xs text-muted-foreground mr-2">{p.code}</span>
-                      {p.description}
-                      {p.size && <span className="text-muted-foreground ml-1">· {p.size}</span>}
-                      <span className="float-right text-muted-foreground">{p.salePrice.toLocaleString("es-PY")}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleScan(scanCode)}
+                disabled={scanning || !scanCode.trim()}
+              >
+                Agregar
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleScan(scanCode)}
-              disabled={scanning || !scanCode.trim()}
-            >
-              Agregar
-            </Button>
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="border rounded-md divide-y">
+                {suggestions.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    onMouseDown={() => {
+                      handleScan(p.code);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <span className="font-mono text-xs text-muted-foreground mr-2">{p.code}</span>
+                    {p.description}
+                    {p.size && <span className="text-muted-foreground ml-1">· {p.size}</span>}
+                    <span className="float-right text-muted-foreground">{p.salePrice.toLocaleString("es-PY")}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {items.length > 0 && (
