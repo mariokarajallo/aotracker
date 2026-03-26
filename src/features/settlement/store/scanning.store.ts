@@ -4,58 +4,65 @@ import type { OrderItem } from "@/types/order";
 interface ScanningStore {
   items: OrderItem[];
   penalty: number;
-  addReturn: (item: OrderItem) => void;
+  amountPaid: number;
+  initializeFromOrder: (items: OrderItem[]) => void;
+  addReturn: (productId: string) => void;
   updateReturnQty: (productId: string, qty: number) => void;
   setPenalty: (penalty: number) => void;
+  setAmountPaid: (amount: number) => void;
   reset: () => void;
   // computed
   totalDue: () => number;
   grandTotal: () => number;
+  balance: () => number;
 }
 
 export const useScanningStore = create<ScanningStore>((set, get) => ({
   items: [],
   penalty: 0,
+  amountPaid: 0,
 
-  addReturn: (item) =>
-    set((state) => {
-      const existing = state.items.find((i) => i.productId === item.productId);
-      if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.productId === item.productId
-              ? {
-                  ...i,
-                  returnedQty: i.returnedQty + 1,
-                  soldQty: i.deliveredQty - (i.returnedQty + 1),
-                  subtotal: (i.deliveredQty - (i.returnedQty + 1)) * i.salePrice,
-                }
-              : i
-          ),
-        };
-      }
-      return { items: [...state.items, item] };
+  initializeFromOrder: (items) =>
+    set({
+      items: items.map((i) => ({
+        ...i,
+        returnedQty: 0,
+        soldQty: i.deliveredQty,
+        subtotal: i.deliveredQty * i.salePrice,
+      })),
+      penalty: 0,
+      amountPaid: 0,
     }),
+
+  addReturn: (productId) =>
+    set((state) => ({
+      items: state.items.map((i) => {
+        if (i.productId !== productId) return i;
+        const returnedQty = Math.min(i.returnedQty + 1, i.deliveredQty);
+        const soldQty = i.deliveredQty - returnedQty;
+        return { ...i, returnedQty, soldQty, subtotal: soldQty * i.salePrice };
+      }),
+    })),
 
   updateReturnQty: (productId, qty) =>
     set((state) => ({
-      items: state.items.map((i) =>
-        i.productId === productId
-          ? {
-              ...i,
-              returnedQty: qty,
-              soldQty: i.deliveredQty - qty,
-              subtotal: (i.deliveredQty - qty) * i.salePrice,
-            }
-          : i
-      ),
+      items: state.items.map((i) => {
+        if (i.productId !== productId) return i;
+        const returnedQty = Math.min(Math.max(0, qty), i.deliveredQty);
+        const soldQty = i.deliveredQty - returnedQty;
+        return { ...i, returnedQty, soldQty, subtotal: soldQty * i.salePrice };
+      }),
     })),
 
   setPenalty: (penalty) => set({ penalty }),
 
-  reset: () => set({ items: [], penalty: 0 }),
+  setAmountPaid: (amountPaid) => set({ amountPaid }),
+
+  reset: () => set({ items: [], penalty: 0, amountPaid: 0 }),
 
   totalDue: () => get().items.reduce((acc, i) => acc + i.subtotal, 0),
 
   grandTotal: () => get().totalDue() + get().penalty,
+
+  balance: () => Math.max(0, get().grandTotal() - get().amountPaid),
 }));
