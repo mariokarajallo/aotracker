@@ -80,3 +80,21 @@ export async function updateOrderStatusAction(
   revalidateTag(TAGS.ORDERS);
   revalidateTag(TAGS.DASHBOARD);
 }
+
+export async function recordPaymentAction(id: string, amount: number): Promise<void> {
+  const snap = await adminDb.collection(COLLECTION).doc(id).get();
+  if (!snap.exists) throw new Error("Nota no encontrada");
+  const data = snap.data()!;
+  const newAmountPaid = data.amountPaid + amount;
+  const newBalance = Math.max(0, data.grandTotal - newAmountPaid);
+  const newStatus: OrderStatus = newBalance === 0 ? "settled_zero_balance" : "settled_pending_balance";
+
+  await adminDb.collection(COLLECTION).doc(id).update({
+    amountPaid: newAmountPaid,
+    balance: newBalance,
+    status: newStatus,
+  });
+
+  revalidateTag(TAGS.ORDERS);
+  revalidateTag(TAGS.DASHBOARD);
+}

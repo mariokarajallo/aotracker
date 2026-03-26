@@ -2,6 +2,7 @@ import { LinkButton } from "@/components/link-button";
 import { Badge } from "@/components/ui/badge";
 import { getOrderByIdServer } from "@/lib/firestore/orders.server";
 import { notFound } from "next/navigation";
+import { CollectBalanceButton } from "@/features/orders/components/collect-balance-button";
 import {
   Table,
   TableBody,
@@ -122,6 +123,13 @@ export default async function OrderDetailPage({ params }: Props) {
           <LinkButton href={`/orders/${order.id}/receipt`} variant="outline">
             Ver comprobante / PDF / WhatsApp
           </LinkButton>
+        )}
+        {order.status === "settled_pending_balance" && (
+          <CollectBalanceButton
+            orderId={order.id}
+            balance={order.balance}
+            grandTotal={order.grandTotal}
+          />
         )}
       </div>
     </main>

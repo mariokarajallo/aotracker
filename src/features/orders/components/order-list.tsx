@@ -13,10 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useOrders } from "../hooks/use-orders";
 import type { Order, OrderStatus } from "@/types/order";
+
+const PAGE_SIZE = 20;
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_settlement: "Aguardando acerto",
@@ -43,6 +45,7 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
   const router = useRouter();
   const { orders, loading, error } = useOrders(initialData);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().replace(/^#/, "");
@@ -53,6 +56,15 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
         String(o.orderNumber ?? "").includes(q)
     );
   }, [orders, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
 
   if (loading) return <p className="text-muted-foreground">Cargando notas...</p>;
   if (error) return <p className="text-destructive">{error}</p>;
@@ -65,13 +77,13 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Buscar por clienta o número (#001)..."
             className="pl-9"
           />
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => handleSearchChange("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="size-4" />
@@ -92,7 +104,7 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
         <>
           {/* Mobile */}
           <div className="sm:hidden space-y-3">
-            {filtered.map((order) => (
+            {paginated.map((order) => (
               <Link
                 key={order.id}
                 href={order.status === "pending_settlement" ? `/orders/${order.id}/settlement` : `/orders/${order.id}`}
@@ -146,7 +158,7 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((order) => (
+                {paginated.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-mono text-sm text-muted-foreground">
                       {order.orderNumber ? fmtNum(order.orderNumber) : "—"}
@@ -184,6 +196,35 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </>
