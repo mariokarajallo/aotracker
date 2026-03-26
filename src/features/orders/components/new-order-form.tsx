@@ -117,7 +117,7 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
   }
 
   function updateQty(id: string, qty: number) {
-    if (qty < 1) return;
+    if (!Number.isFinite(qty) || qty < 1) return;
     setItems((prev) =>
       prev.map((i) =>
         i.id === id
