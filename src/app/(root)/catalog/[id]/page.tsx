@@ -1,5 +1,5 @@
 import { ProductForm } from "@/features/catalog/components/product-form";
-import { getProductByIdServer } from "@/lib/firestore/products.server";
+import { getProductByIdServer, getProductBrandsServer } from "@/lib/firestore/products.server";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -12,14 +12,17 @@ interface Props {
 export default async function ProductDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   const { edit } = await searchParams;
-  const product = await getProductByIdServer(id);
+  const [product, brands] = await Promise.all([
+    getProductByIdServer(id),
+    getProductBrandsServer(),
+  ]);
 
   if (!product) notFound();
 
   if (edit === "true") {
     return (
       <main className="p-6 flex justify-center">
-        <ProductForm product={product} />
+        <ProductForm product={product} brands={brands} />
       </main>
     );
   }

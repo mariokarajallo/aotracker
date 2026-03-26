@@ -15,6 +15,7 @@ import type { Product } from "@/types/product";
 
 interface ProductFormProps {
   product?: Product;
+  brands?: string[];
 }
 
 function calcMargin(cost: number, sale: number): number {
@@ -27,7 +28,7 @@ function calcSaleFromMargin(cost: number, margin: number): number {
   return cost * (1 + margin / 100);
 }
 
-export function ProductForm({ product }: ProductFormProps) {
+export function ProductForm({ product, brands = [] }: ProductFormProps) {
   const router = useRouter();
   const isEditing = !!product;
 
@@ -64,11 +65,14 @@ export function ProductForm({ product }: ProductFormProps) {
   function handleMarginChange(raw: string) {
     setMarginInput(raw);
     const pct = parseFloat(raw);
-    if (Number.isFinite(pct) && pct > 0 && values.costPrice > 0) {
-      const sale = calcSaleFromMargin(values.costPrice, pct);
-      setValues((prev) => ({ ...prev, salePrice: Math.round(sale) }));
-      if (errors.salePrice) setErrors((prev) => ({ ...prev, salePrice: undefined }));
+    if (!Number.isFinite(pct) || values.costPrice <= 0) return;
+    if (pct <= 0) {
+      setValues((prev) => ({ ...prev, salePrice: 0 }));
+      return;
     }
+    const sale = calcSaleFromMargin(values.costPrice, pct);
+    setValues((prev) => ({ ...prev, salePrice: Math.round(sale) }));
+    if (errors.salePrice) setErrors((prev) => ({ ...prev, salePrice: undefined }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -139,7 +143,16 @@ export function ProductForm({ product }: ProductFormProps) {
                 value={values.brand}
                 onChange={(e) => handleChange("brand", e.target.value)}
                 placeholder="Nike, Adidas..."
+                list="brand-options"
+                autoComplete="off"
               />
+              {brands.length > 0 && (
+                <datalist id="brand-options">
+                  {brands.map((b) => (
+                    <option key={b} value={b} />
+                  ))}
+                </datalist>
+              )}
             </div>
 
             <div className="space-y-1">

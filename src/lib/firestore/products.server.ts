@@ -19,6 +19,16 @@ export async function getProductsServer(): Promise<Product[]> {
   });
 }
 
+export async function getProductBrandsServer(): Promise<string[]> {
+  const snapshot = await adminDb.collection(COLLECTION).select("brand").get();
+  const brands = new Set<string>();
+  snapshot.docs.forEach((doc) => {
+    const brand = doc.get("brand");
+    if (brand && typeof brand === "string") brands.add(brand);
+  });
+  return Array.from(brands).sort();
+}
+
 export async function getProductByIdServer(id: string): Promise<Product | null> {
   const ref = adminDb.collection(COLLECTION).doc(id);
   const snapshot = await ref.get();
