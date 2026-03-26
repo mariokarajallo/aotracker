@@ -9,6 +9,8 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "aotracker",
   description: "Sistema de liquidación de mercaderías",
