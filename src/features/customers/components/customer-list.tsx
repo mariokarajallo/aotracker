@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -29,16 +30,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { MoreHorizontal, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
 import { deactivateCustomerAction } from "@/lib/actions/customers";
 import { useCustomers } from "../hooks/use-customers";
 import type { Customer } from "@/types/customer";
+
+const PAGE_SIZE = 20;
 
 export function CustomerList({ initialData }: { initialData?: Customer[] }) {
   const router = useRouter();
   const { customers, setCustomers, loading, error } = useCustomers(initialData);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    if (!q) return customers;
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.whatsapp.includes(q) ||
+        (c.nationalId ?? "").toLowerCase().includes(q)
+    );
+  }, [customers, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    setPage(1);
+  }
 
   async function handleDeactivate(id: string) {
     try {
@@ -55,15 +80,43 @@ export function CustomerList({ initialData }: { initialData?: Customer[] }) {
 
   if (loading) return <p className="text-muted-foreground">Cargando clientas...</p>;
   if (error) return <p className="text-destructive">{error}</p>;
-  if (customers.length === 0) return (
-    <p className="text-muted-foreground">No hay clientas registradas aún.</p>
-  );
 
   return (
     <>
+      {/* Search */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Buscar por nombre, WhatsApp o cédula..."
+            className="pl-9"
+          />
+          {search && (
+            <button
+              onClick={() => handleSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "clienta" : "clientas"}
+          {search ? " encontradas" : " en total"}
+        </p>
+      </div>
+
+      {customers.length === 0 ? (
+        <p className="text-muted-foreground">No hay clientas registradas aún.</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-muted-foreground">No se encontraron clientas.</p>
+      ) : (
+        <>
       {/* Mobile */}
       <div className="sm:hidden space-y-3">
-        {customers.map((customer) => (
+        {paginated.map((customer) => (
           <Link
             key={customer.id}
             href={`/customers/${customer.id}`}
@@ -98,7 +151,7 @@ export function CustomerList({ initialData }: { initialData?: Customer[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.map((customer) => (
+            {paginated.map((customer) => (
               <TableRow key={customer.id}>
                 <TableCell className="font-medium">{customer.name}</TableCell>
                 <TableCell>{customer.whatsapp}</TableCell>
@@ -133,6 +186,37 @@ export function CustomerList({ initialData }: { initialData?: Customer[] }) {
           </TableBody>
         </Table>
       </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <AlertDialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
         <AlertDialogContent>

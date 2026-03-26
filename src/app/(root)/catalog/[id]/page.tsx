@@ -29,6 +29,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
       <h1 className="text-2xl font-bold">{product.description}</h1>
       <div className="space-y-2 text-sm text-muted-foreground">
         <p><span className="font-medium text-foreground">Código:</span> {product.code}</p>
+        {product.brand && <p><span className="font-medium text-foreground">Marca:</span> {product.brand}</p>}
         {product.size && <p><span className="font-medium text-foreground">Talle:</span> {product.size}</p>}
         <p><span className="font-medium text-foreground">Precio de costo:</span> {product.costPrice.toLocaleString("es-PY")}</p>
         <p><span className="font-medium text-foreground">Precio de venta:</span> {product.salePrice.toLocaleString("es-PY")}</p>

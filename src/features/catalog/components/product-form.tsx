@@ -17,6 +17,16 @@ interface ProductFormProps {
   product?: Product;
 }
 
+function calcMargin(cost: number, sale: number): number {
+  if (cost <= 0 || sale <= cost) return 0;
+  return ((sale - cost) / cost) * 100;
+}
+
+function calcSaleFromMargin(cost: number, margin: number): number {
+  if (cost <= 0 || margin <= 0) return 0;
+  return cost * (1 + margin / 100);
+}
+
 export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const isEditing = !!product;
@@ -24,21 +34,41 @@ export function ProductForm({ product }: ProductFormProps) {
   const [values, setValues] = useState<ProductFormValues>({
     code: product?.code ?? "",
     description: product?.description ?? "",
+    brand: product?.brand ?? "",
     size: product?.size ?? "",
     costPrice: product?.costPrice ?? 0,
     salePrice: product?.salePrice ?? 0,
   });
+  const [marginInput, setMarginInput] = useState<string>(
+    product ? calcMargin(product.costPrice, product.salePrice).toFixed(1) : ""
+  );
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [saving, setSaving] = useState(false);
 
-  const margin =
-    values.costPrice > 0 && values.salePrice > values.costPrice
-      ? (((values.salePrice - values.costPrice) / values.costPrice) * 100).toFixed(1)
-      : null;
-
   function handleChange(field: keyof ProductFormValues, value: string | number) {
-    setValues((prev) => ({ ...prev, [field]: value }));
+    setValues((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "salePrice" && prev.costPrice > 0) {
+        const m = calcMargin(prev.costPrice, Number(value));
+        setMarginInput(m > 0 ? m.toFixed(1) : "");
+      }
+      if (field === "costPrice" && prev.salePrice > 0) {
+        const m = calcMargin(Number(value), prev.salePrice);
+        setMarginInput(m > 0 ? m.toFixed(1) : "");
+      }
+      return next;
+    });
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }
+
+  function handleMarginChange(raw: string) {
+    setMarginInput(raw);
+    const pct = parseFloat(raw);
+    if (Number.isFinite(pct) && pct > 0 && values.costPrice > 0) {
+      const sale = calcSaleFromMargin(values.costPrice, pct);
+      setValues((prev) => ({ ...prev, salePrice: Math.round(sale) }));
+      if (errors.salePrice) setErrors((prev) => ({ ...prev, salePrice: undefined }));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,21 +131,33 @@ export function ProductForm({ product }: ProductFormProps) {
             {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="size">Talle</Label>
-            <Input
-              id="size"
-              value={values.size}
-              onChange={(e) => handleChange("size", e.target.value)}
-              placeholder="S, M, L, XL, 38, 40..."
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="brand">Marca</Label>
+              <Input
+                id="brand"
+                value={values.brand}
+                onChange={(e) => handleChange("brand", e.target.value)}
+                placeholder="Nike, Adidas..."
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="size">Talle</Label>
+              <Input
+                id="size"
+                value={values.size}
+                onChange={(e) => handleChange("size", e.target.value)}
+                placeholder="S, M, L, 38..."
+              />
+            </div>
           </div>
 
           <Separator />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="costPrice">Precio de costo *</Label>
+              <Label htmlFor="costPrice">Costo *</Label>
               <Input
                 id="costPrice"
                 type="number"
@@ -128,7 +170,7 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="salePrice">Precio de venta *</Label>
+              <Label htmlFor="salePrice">Venta *</Label>
               <Input
                 id="salePrice"
                 type="number"
@@ -139,13 +181,20 @@ export function ProductForm({ product }: ProductFormProps) {
               />
               {errors.salePrice && <p className="text-sm text-destructive">{errors.salePrice}</p>}
             </div>
-          </div>
 
-          {margin && (
-            <p className="text-sm text-muted-foreground">
-              Ganancia: <span className="font-semibold text-foreground">{margin}%</span>
-            </p>
-          )}
+            <div className="space-y-1">
+              <Label htmlFor="margin">Ganancia %</Label>
+              <Input
+                id="margin"
+                type="number"
+                min={0}
+                value={marginInput}
+                onChange={(e) => handleMarginChange(e.target.value)}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">Auto o manual</p>
+            </div>
+          </div>
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={saving}>
