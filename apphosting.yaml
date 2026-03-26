@@ -47,7 +47,7 @@ env:
 
   # Allowed emails (comma-separated)
   - variable: ALLOWED_EMAILS
-    value: "Maidirivas2003@gmail.com,mariokarajallo92@gmail.com"
+    value: "maidirivas2003@gmail.com,mariokarajallo92@gmail.com"
     availability:
       - RUNTIME
 
