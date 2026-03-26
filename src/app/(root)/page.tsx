@@ -2,6 +2,7 @@ import { getDashboardData } from "@/lib/firestore/dashboard.server";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { LinkButton } from "@/components/link-button";
+import { DashboardIncomeCards } from "@/components/dashboard-income-cards";
 
 function fmt(n: number) {
   return n.toLocaleString("es-PY");
@@ -38,25 +39,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Income cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Hoy", data: today },
-          { label: "Esta semana", data: week },
-          { label: "Este mes", data: month },
-        ].map(({ label, data }, index) => (
-          <div key={label} className={`border rounded-xl p-4 space-y-1${index === 2 ? " col-span-2 sm:col-span-1" : ""}`}>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-bold tabular-nums">
-              {data.total === 0 ? "—" : `Gs. ${fmt(data.total)}`}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {data.count === 0
-                ? "Sin cobros"
-                : `${data.count} ${data.count === 1 ? "cobro" : "cobros"}`}
-            </p>
-          </div>
-        ))}
-      </div>
+      <DashboardIncomeCards today={today} week={week} month={month} />
 
       {/* Alerts row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
