@@ -2,6 +2,8 @@ import { ProductForm } from "@/features/catalog/components/product-form";
 import { getProductByIdServer } from "@/lib/firestore/products.server";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ edit?: string }>;

@@ -15,6 +15,8 @@ import {
 import { LinkButton } from "@/components/link-button";
 import type { OrderStatus } from "@/types/order";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_settlement: "Pendiente",
   settled_zero_balance: "Saldo cero",

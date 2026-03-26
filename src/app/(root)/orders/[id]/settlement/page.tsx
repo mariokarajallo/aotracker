@@ -2,6 +2,8 @@ import { getOrderByIdServer } from "@/lib/firestore/orders.server";
 import { notFound, redirect } from "next/navigation";
 import { SettlementFlow } from "@/features/settlement/components/settlement-flow";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ id: string }>;
 }

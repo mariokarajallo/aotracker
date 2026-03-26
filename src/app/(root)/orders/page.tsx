@@ -2,6 +2,8 @@ import { LinkButton } from "@/components/link-button";
 import { OrderList } from "@/features/orders/components/order-list";
 import { getOrdersServer } from "@/lib/firestore/orders.server";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   const orders = await getOrdersServer();
   return (

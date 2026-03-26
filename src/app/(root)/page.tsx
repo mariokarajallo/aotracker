@@ -4,6 +4,8 @@ import { Separator } from "@/components/ui/separator";
 import { LinkButton } from "@/components/link-button";
 import { DashboardIncomeCards } from "@/components/dashboard-income-cards";
 
+export const dynamic = "force-dynamic";
+
 function fmt(n: number) {
   return n.toLocaleString("es-PY");
 }

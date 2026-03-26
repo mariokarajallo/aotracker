@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { OrderStatus } from "@/types/order";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_settlement: "Aguardando acerto",
   settled_zero_balance: "Saldo cero",

@@ -2,6 +2,8 @@ import { LinkButton } from "@/components/link-button";
 import { CustomerList } from "@/features/customers/components/customer-list";
 import { getCustomersServer } from "@/lib/firestore/customers.server";
 
+export const dynamic = "force-dynamic";
+
 export default async function CustomersPage() {
   const customers = await getCustomersServer();
   return (

@@ -2,6 +2,8 @@ import { LinkButton } from "@/components/link-button";
 import { ProductList } from "@/features/catalog/components/product-list";
 import { getProductsServer } from "@/lib/firestore/products.server";
 
+export const dynamic = "force-dynamic";
+
 export default async function CatalogPage() {
   const products = await getProductsServer();
   return (

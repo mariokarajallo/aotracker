@@ -2,6 +2,8 @@ import { NewOrderForm } from "@/features/orders/components/new-order-form";
 import { getCustomersServer } from "@/lib/firestore/customers.server";
 import { getProductsServer } from "@/lib/firestore/products.server";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewOrderPage() {
   const [allCustomers, products] = await Promise.all([
     getCustomersServer(),
