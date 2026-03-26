@@ -39,7 +39,14 @@ export default async function ReceiptPage({ params }: Props) {
         {/* Header */}
         <div className="bg-muted/50 px-6 py-5 flex items-start justify-between">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Comprobante de arreglo</p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Comprobante de arreglo</p>
+              {order.orderNumber && (
+                <p className="text-xs font-mono font-semibold">
+                  #{String(order.orderNumber).padStart(3, "0")}
+                </p>
+              )}
+            </div>
             <h1 className="text-xl font-bold">{order.customerName}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {order.settledAt?.toLocaleDateString("es-PY", {

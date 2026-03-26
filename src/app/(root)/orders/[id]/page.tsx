@@ -39,7 +39,14 @@ export default async function OrderDetailPage({ params }: Props) {
     <main className="p-4 sm:p-6 space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{order.customerName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{order.customerName}</h1>
+            {order.orderNumber && (
+              <span className="text-base font-mono text-muted-foreground">
+                #{String(order.orderNumber).padStart(3, "0")}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {order.createdAt?.toLocaleDateString("es-PY", {
               day: "2-digit", month: "long", year: "numeric"

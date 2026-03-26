@@ -18,6 +18,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  orderNumber: number;  // sequential — assigned at creation via Firestore counter
   customerId: string;
   customerName: string; // denormalized
   status: OrderStatus;

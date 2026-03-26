@@ -6,6 +6,7 @@ import { TAGS } from "@/lib/cache/tags";
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 
 const COLLECTION = "orders";
+const COUNTER_REF = () => adminDb.collection("counters").doc("orders");
 
 export async function createOrderAction(
   data: Pick<Order, "customerId" | "customerName"> & { items: OrderItem[]; notes?: string }
@@ -13,26 +14,39 @@ export async function createOrderAction(
   const totalDelivered = data.items.reduce((acc, i) => acc + i.deliveredQty, 0);
   const totalDue = data.items.reduce((acc, i) => acc + i.subtotal, 0);
 
-  const ref = await adminDb.collection(COLLECTION).add({
-    customerId: data.customerId,
-    customerName: data.customerName,
-    ...(data.notes ? { notes: data.notes } : {}),
-    items: data.items,
-    status: "pending_settlement" as OrderStatus,
-    totalDelivered,
-    totalReturned: 0,
-    totalSold: totalDelivered,
-    totalDue,
-    penalty: 0,
-    grandTotal: totalDue,
-    amountPaid: 0,
-    balance: totalDue,
-    createdAt: new Date(),
-    settledAt: null,
+  let orderId = "";
+
+  await adminDb.runTransaction(async (tx) => {
+    const counterSnap = await tx.get(COUNTER_REF());
+    const orderNumber = (counterSnap.data()?.lastNumber ?? 0) + 1;
+
+    const orderRef = adminDb.collection(COLLECTION).doc();
+    orderId = orderRef.id;
+
+    tx.set(COUNTER_REF(), { lastNumber: orderNumber }, { merge: true });
+    tx.set(orderRef, {
+      orderNumber,
+      customerId: data.customerId,
+      customerName: data.customerName,
+      ...(data.notes ? { notes: data.notes } : {}),
+      items: data.items,
+      status: "pending_settlement" as OrderStatus,
+      totalDelivered,
+      totalReturned: 0,
+      totalSold: totalDelivered,
+      totalDue,
+      penalty: 0,
+      grandTotal: totalDue,
+      amountPaid: 0,
+      balance: totalDue,
+      createdAt: new Date(),
+      settledAt: null,
+    });
   });
+
   revalidateTag(TAGS.ORDERS);
   revalidateTag(TAGS.DASHBOARD);
-  return ref.id;
+  return orderId;
 }
 
 export async function updateOrderStatusAction(
@@ -62,6 +76,7 @@ export async function updateOrderStatusAction(
     balance,
     settledAt: new Date(),
   });
+
   revalidateTag(TAGS.ORDERS);
   revalidateTag(TAGS.DASHBOARD);
 }

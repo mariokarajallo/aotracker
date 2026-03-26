@@ -100,6 +100,7 @@ export async function GET() {
     clearCollection("customers"),
     clearCollection("products"),
     clearCollection("orders"),
+    clearCollection("counters"),
   ]);
 
   const now = new Date();
@@ -162,12 +163,14 @@ export async function GET() {
     items: ReturnType<typeof item>[],
     createdDaysAgo: number,
     notes?: string
-  ) {
+  ): Record<string, unknown> {
+    const orderNumber = ++orderSeq;
     const totalDelivered = items.reduce((a, i) => a + i.deliveredQty, 0);
     const totalDue = items.reduce((a, i) => a + i.subtotal, 0);
     const createdAt = new Date(now);
     createdAt.setDate(createdAt.getDate() - createdDaysAgo);
     return {
+      orderNumber,
       customerId: customerRefs[customerIdx].id,
       customerName: CUSTOMERS[customerIdx].name,
       status: "pending_settlement",
@@ -194,7 +197,8 @@ export async function GET() {
     createdDaysAgo: number,
     settledDaysAgo: number,
     notes?: string
-  ) {
+  ): Record<string, unknown> {
+    const orderNumber = ++orderSeq;
     const totalDelivered = items.reduce((a, i) => a + i.deliveredQty, 0);
     const totalReturned = items.reduce((a, i) => a + i.returnedQty, 0);
     const totalSold = items.reduce((a, i) => a + i.soldQty, 0);
@@ -208,6 +212,7 @@ export async function GET() {
     const settledAt = new Date(now);
     settledAt.setDate(settledAt.getDate() - settledDaysAgo);
     return {
+      orderNumber,
       customerId: customerRefs[customerIdx].id,
       customerName: CUSTOMERS[customerIdx].name,
       status,
@@ -227,6 +232,7 @@ export async function GET() {
   }
 
   // 4. Build orders covering all statuses
+  let orderSeq = 0;
   const orders = [
     // ── pending_settlement ─────────────────────────────────────────────────
     buildPending(0, [item(0, 3, 0), item(11, 2, 0), item(26, 1, 0)], 5),
@@ -253,21 +259,26 @@ export async function GET() {
     buildSettled(21, [item(11, 4, 1), item(16, 2, 0)], 15000, 300000, 28, 21, "Penalización por devolución tardía"),
   ];
 
-  // 5. Insert orders (batch)
+  // 5. Insert orders (batch) + set counter
   const orderBatch = adminDb.batch();
   for (const order of orders) {
     const ref = adminDb.collection("orders").doc();
     orderBatch.set(ref, order);
   }
+  orderBatch.set(
+    adminDb.collection("counters").doc("orders"),
+    { lastNumber: orderSeq }
+  );
   await orderBatch.commit();
 
   return NextResponse.json({
     ok: true,
-    cleared: ["customers", "products", "orders"],
+    cleared: ["customers", "products", "orders", "counters"],
     inserted: {
       customers: CUSTOMERS.length,
       products: PRODUCTS.length,
       orders: orders.length,
     },
+    counter: { orders: orderSeq },
   });
 }
