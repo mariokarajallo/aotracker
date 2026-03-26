@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
-if (process.env.NODE_ENV !== "development") {
-  throw new Error("Seed route is only available in development");
-}
-
 const customers = [
   {
     name: "María González",
@@ -63,6 +59,10 @@ const products = [
 ];
 
 export async function GET() {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const batch = adminDb.batch();
   const now = FieldValue.serverTimestamp();
 
