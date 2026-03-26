@@ -226,7 +226,7 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
                 disabled={scanning}
               />
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full border rounded-md bg-background shadow-md divide-y">
+                <div className="absolute z-10 bottom-full mb-1 w-full border rounded-md bg-background shadow-md divide-y">
                   {suggestions.map((p) => (
                     <button
                       key={p.id}
