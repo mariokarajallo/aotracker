@@ -45,6 +45,12 @@ env:
       - BUILD
       - RUNTIME
 
+  # Allowed emails (comma-separated)
+  - variable: ALLOWED_EMAILS
+    value: "Maidirivas2003@gmail.com,mariokarajallo92@gmail.com"
+    availability:
+      - RUNTIME
+
   # Clerk
   - variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
     value: pk_test_c2FjcmVkLWNhbWVsLTE5LmNsZXJrLmFjY291bnRzLmRldiQ
