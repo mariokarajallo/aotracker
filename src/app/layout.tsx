@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { esES } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={esES}>
       <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
           {children}
