@@ -15,6 +15,11 @@ import {
 import { useOrders } from "../hooks/use-orders";
 import type { Order, OrderStatus } from "@/types/order";
 
+function fmtDate(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  return (typeof d === "string" ? new Date(d) : d).toLocaleDateString("es-PY");
+}
+
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_settlement: "Aguardando acerto",
   settled_zero_balance: "Saldo cero",
@@ -51,7 +56,7 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
               <div>
                 <p className="font-semibold">{order.customerName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {order.createdAt?.toLocaleDateString("es-PY")}
+                  {fmtDate(order.createdAt)}
                 </p>
               </div>
               <Badge variant={STATUS_VARIANTS[order.status]}>
@@ -93,7 +98,7 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
               <TableRow key={order.id}>
                 <TableCell className="font-medium">{order.customerName}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {order.createdAt?.toLocaleDateString("es-PY")}
+                  {fmtDate(order.createdAt)}
                 </TableCell>
                 <TableCell>
                   <Badge variant={STATUS_VARIANTS[order.status]}>
