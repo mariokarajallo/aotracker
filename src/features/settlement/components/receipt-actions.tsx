@@ -17,28 +17,67 @@ export function ReceiptActions({ order }: ReceiptActionsProps) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   function buildWhatsAppText(): string {
-    const date = order.settledAt?.toLocaleDateString("es-PY") ?? "";
-    const lines = [
-      `*Arreglo - ${date}*`,
+    const settledDate = order.settledAt
+      ? (typeof order.settledAt === "string" ? new Date(order.settledAt) : order.settledAt)
+          .toLocaleDateString("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" })
+      : "";
+
+    const orderNum = order.orderNumber
+      ? `#${String(order.orderNumber).padStart(3, "0")} — `
+      : "";
+
+    const soldItems = order.items.filter((i) => i.soldQty > 0);
+    const returnedItems = order.items.filter((i) => i.returnedQty > 0);
+
+    const lines: string[] = [
+      `*Arreglo ${orderNum}${order.customerName}*`,
+      `📅 ${settledDate}`,
       "",
-      ...order.items
-        .filter((i) => i.soldQty > 0)
-        .map((i) => `• ${i.description}${i.size ? ` (${i.size})` : ""} x${i.soldQty} = ${i.subtotal.toLocaleString("es-PY")}`),
-      "",
-      `*Mercadería vendida:* ${order.totalDue.toLocaleString("es-PY")}`,
     ];
 
-    if (order.penalty > 0) {
-      lines.push(`*Multa:* ${order.penalty.toLocaleString("es-PY")}`);
+    // Sold
+    if (soldItems.length > 0) {
+      lines.push("*Prendas vendidas:*");
+      for (const i of soldItems) {
+        lines.push(`• ${i.description}${i.size ? ` (${i.size})` : ""} x${i.soldQty} — Gs. ${i.subtotal.toLocaleString("es-PY")}`);
+      }
+      lines.push("");
     }
 
-    lines.push(`*Total:* ${order.grandTotal.toLocaleString("es-PY")}`);
-    lines.push(`*Recibido:* ${order.amountPaid.toLocaleString("es-PY")}`);
+    // Returned
+    if (returnedItems.length > 0) {
+      lines.push("*Devuelto:*");
+      for (const i of returnedItems) {
+        lines.push(`• ${i.description}${i.size ? ` (${i.size})` : ""} x${i.returnedQty}`);
+      }
+      lines.push("");
+    }
+
+    // Totals
+    lines.push("━━━━━━━━━━━━");
+    lines.push(`Mercadería: Gs. ${order.totalDue.toLocaleString("es-PY")}`);
+    if (order.penalty > 0) {
+      lines.push(`Multa: Gs. ${order.penalty.toLocaleString("es-PY")}`);
+    }
+    lines.push(`*Total: Gs. ${order.grandTotal.toLocaleString("es-PY")}*`);
+    lines.push("");
+
+    // Payment history
+    if (order.payments && order.payments.length > 0) {
+      lines.push("*Pagos recibidos:*");
+      for (const p of order.payments) {
+        const d = new Date(p.date).toLocaleDateString("es-PY", {
+          day: "2-digit", month: "2-digit", year: "numeric",
+        });
+        lines.push(`• ${d} — Gs. ${p.amount.toLocaleString("es-PY")}`);
+      }
+      lines.push("");
+    }
 
     if (order.balance > 0) {
-      lines.push(`*Saldo pendiente:* ${order.balance.toLocaleString("es-PY")} ⚠️`);
+      lines.push(`⚠️ *Saldo pendiente: Gs. ${order.balance.toLocaleString("es-PY")}*`);
     } else {
-      lines.push("*Saldo: Cero ✅*");
+      lines.push("✅ *Saldo: Cero*");
     }
 
     return lines.join("\n");

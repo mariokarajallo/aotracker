@@ -16,6 +16,11 @@ export interface OrderItem {
   subtotal: number;   // calculated: soldQty * salePrice
 }
 
+export interface PaymentRecord {
+  amount: number;
+  date: string; // ISO string — safe for Firestore and cache serialisation
+}
+
 export interface Order {
   id: string;
   orderNumber: number;  // sequential — assigned at creation via Firestore counter
@@ -31,6 +36,7 @@ export interface Order {
   grandTotal: number;   // totalDue + penalty
   amountPaid: number;
   balance: number;      // grandTotal - amountPaid
+  payments: PaymentRecord[];  // full payment history, appended on each payment
   notes?: string;
   createdAt: Date;
   settledAt?: Date;

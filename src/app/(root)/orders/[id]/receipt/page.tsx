@@ -148,6 +148,32 @@ export default async function ReceiptPage({ params }: Props) {
           )}
         </div>
 
+        {/* Payment history */}
+        {order.payments && order.payments.length > 0 && (
+          <>
+            <Separator />
+            <div className="px-6 py-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Historial de pagos
+              </p>
+              <div className="space-y-1.5">
+                {order.payments.map((p, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date(p.date).toLocaleDateString("es-PY", {
+                        day: "2-digit", month: "short", year: "numeric",
+                      })}
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      Gs. {p.amount.toLocaleString("es-PY")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
       </div>
 
       {/* Actions */}

@@ -185,6 +185,7 @@ export async function GET() {
       grandTotal: totalDue,
       amountPaid: 0,
       balance: totalDue,
+      payments: [],
       ...(notes ? { notes } : {}),
       createdAt,
       settledAt: null,
@@ -198,7 +199,8 @@ export async function GET() {
     amountPaid: number,
     createdDaysAgo: number,
     settledDaysAgo: number,
-    notes?: string
+    notes?: string,
+    extraPayments?: { amount: number; daysAgo: number }[]
   ): Record<string, unknown> {
     const orderNumber = ++orderSeq;
     const totalDelivered = items.reduce((a, i) => a + i.deliveredQty, 0);
@@ -213,6 +215,22 @@ export async function GET() {
     createdAt.setDate(createdAt.getDate() - createdDaysAgo);
     const settledAt = new Date(now);
     settledAt.setDate(settledAt.getDate() - settledDaysAgo);
+
+    // Build payments array: first entry is at settlement, then extra payments
+    const payments: { amount: number; date: string }[] = [];
+    if (extraPayments && extraPayments.length > 0) {
+      // multi-payment: distribute first payment, extras come later
+      const firstAmount = extraPayments[0].amount;
+      payments.push({ amount: firstAmount, date: settledAt.toISOString() });
+      for (const ep of extraPayments.slice(1)) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - ep.daysAgo);
+        payments.push({ amount: ep.amount, date: d.toISOString() });
+      }
+    } else if (amountPaid > 0) {
+      payments.push({ amount: amountPaid, date: settledAt.toISOString() });
+    }
+
     return {
       orderNumber,
       customerId: customerRefs[customerIdx].id,
@@ -227,6 +245,7 @@ export async function GET() {
       grandTotal,
       amountPaid,
       balance,
+      payments,
       ...(notes ? { notes } : {}),
       createdAt,
       settledAt,
@@ -247,8 +266,12 @@ export async function GET() {
     buildPending(9, [item(24, 1, 0), item(25, 1, 0), item(29, 3, 0)], 6),
 
     // ── settled_zero_balance ───────────────────────────────────────────────
-    buildSettled(10, [item(0, 3, 1), item(5, 2, 0)], 0, 185000, 30, 25),
-    buildSettled(11, [item(11, 2, 0), item(12, 1, 0), item(26, 1, 0)], 0, 490000, 45, 38),
+    // pagó en dos partes: 100k al arreglo, 85k una semana después
+    buildSettled(10, [item(0, 3, 1), item(5, 2, 0)], 0, 185000, 30, 25, undefined,
+      [{ amount: 100000, daysAgo: 25 }, { amount: 85000, daysAgo: 18 }]),
+    // pagó en dos partes: 300k al arreglo, 190k al mes
+    buildSettled(11, [item(11, 2, 0), item(12, 1, 0), item(26, 1, 0)], 0, 490000, 45, 38, undefined,
+      [{ amount: 300000, daysAgo: 38 }, { amount: 190000, daysAgo: 10 }]),
     buildSettled(13, [item(16, 3, 1), item(27, 2, 1)], 0, 178000, 20, 15),
     buildSettled(14, [item(21, 2, 0), item(22, 1, 0), item(23, 1, 0)], 0, 1102000, 60, 55),
     buildSettled(15, [item(6, 4, 2), item(8, 2, 1)], 0, 148000, 25, 20),

@@ -1,9 +1,10 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { revalidateTag } from "next/cache";
 import { TAGS } from "@/lib/cache/tags";
-import type { Order, OrderItem, OrderStatus } from "@/types/order";
+import type { Order, OrderItem, OrderStatus, PaymentRecord } from "@/types/order";
 
 const COLLECTION = "orders";
 const COUNTER_REF = () => adminDb.collection("counters").doc("orders");
@@ -39,6 +40,7 @@ export async function createOrderAction(
       grandTotal: totalDue,
       amountPaid: 0,
       balance: totalDue,
+      payments: [],
       createdAt: new Date(),
       settledAt: null,
     });
@@ -64,6 +66,12 @@ export async function updateOrderStatusAction(
   const grandTotal = totalDue + settlementData.penalty;
   const balance = grandTotal - settlementData.amountPaid;
 
+  // Record first payment if clienta paid something at settlement
+  const firstPayment: PaymentRecord[] =
+    settlementData.amountPaid > 0
+      ? [{ amount: settlementData.amountPaid, date: new Date().toISOString() }]
+      : [];
+
   await adminDb.collection(COLLECTION).doc(id).update({
     status,
     items: settlementData.items,
@@ -74,6 +82,7 @@ export async function updateOrderStatusAction(
     grandTotal,
     amountPaid: settlementData.amountPaid,
     balance,
+    payments: firstPayment,
     settledAt: new Date(),
   });
 
@@ -87,12 +96,16 @@ export async function recordPaymentAction(id: string, amount: number): Promise<v
   const data = snap.data()!;
   const newAmountPaid = data.amountPaid + amount;
   const newBalance = Math.max(0, data.grandTotal - newAmountPaid);
-  const newStatus: OrderStatus = newBalance === 0 ? "settled_zero_balance" : "settled_pending_balance";
+  const newStatus: OrderStatus =
+    newBalance === 0 ? "settled_zero_balance" : "settled_pending_balance";
+
+  const payment: PaymentRecord = { amount, date: new Date().toISOString() };
 
   await adminDb.collection(COLLECTION).doc(id).update({
     amountPaid: newAmountPaid,
     balance: newBalance,
     status: newStatus,
+    payments: FieldValue.arrayUnion(payment),
   });
 
   revalidateTag(TAGS.ORDERS);
