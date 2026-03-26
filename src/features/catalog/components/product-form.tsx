@@ -24,7 +24,7 @@ function calcMargin(cost: number, sale: number): number {
 }
 
 function calcSaleFromMargin(cost: number, margin: number): number {
-  if (cost <= 0 || margin <= 0) return 0;
+  if (cost <= 0) return 0;
   return cost * (1 + margin / 100);
 }
 
@@ -66,10 +66,6 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
     setMarginInput(raw);
     const pct = parseFloat(raw);
     if (!Number.isFinite(pct) || values.costPrice <= 0) return;
-    if (pct <= 0) {
-      setValues((prev) => ({ ...prev, salePrice: 0 }));
-      return;
-    }
     const sale = calcSaleFromMargin(values.costPrice, pct);
     setValues((prev) => ({ ...prev, salePrice: Math.round(sale) }));
     if (errors.salePrice) setErrors((prev) => ({ ...prev, salePrice: undefined }));
