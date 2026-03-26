@@ -124,14 +124,15 @@ export default async function OrderDetailPage({ params }: Props) {
             Ver comprobante / PDF / WhatsApp
           </LinkButton>
         )}
-        {order.status === "settled_pending_balance" && (
-          <CollectBalanceButton
-            orderId={order.id}
-            balance={order.balance}
-            grandTotal={order.grandTotal}
-          />
-        )}
       </div>
+
+      {order.status === "settled_pending_balance" && (
+        <CollectBalanceButton
+          orderId={order.id}
+          balance={order.balance}
+          grandTotal={order.grandTotal}
+        />
+      )}
     </main>
   );
 }
