@@ -1,7 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { TAGS } from "@/lib/cache/tags";
 import type { ProductFormValues } from "@/features/catalog/schemas/product.schema";
 
@@ -23,7 +23,7 @@ export async function createProductAction(data: ProductFormValues): Promise<stri
     createdAt: new Date(),
     updatedAt: new Date(),
   });
-  revalidateTag(TAGS.PRODUCTS);
+  updateTag(TAGS.PRODUCTS);
   return ref.id;
 }
 
@@ -38,10 +38,10 @@ export async function updateProductAction(id: string, data: ProductFormValues): 
     margin: calculateMargin(data.costPrice, data.salePrice),
     updatedAt: new Date(),
   });
-  revalidateTag(TAGS.PRODUCTS);
+  updateTag(TAGS.PRODUCTS);
 }
 
 export async function deleteProductAction(id: string): Promise<void> {
   await adminDb.collection(COLLECTION).doc(id).delete();
-  revalidateTag(TAGS.PRODUCTS);
+  updateTag(TAGS.PRODUCTS);
 }
