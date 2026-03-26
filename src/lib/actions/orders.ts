@@ -1,7 +1,8 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { TAGS } from "@/lib/cache/tags";
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 
 const COLLECTION = "orders";
@@ -29,7 +30,8 @@ export async function createOrderAction(
     createdAt: new Date(),
     settledAt: null,
   });
-  revalidatePath("/orders");
+  revalidateTag(TAGS.ORDERS);
+  revalidateTag(TAGS.DASHBOARD);
   return ref.id;
 }
 
@@ -60,7 +62,6 @@ export async function updateOrderStatusAction(
     balance,
     settledAt: new Date(),
   });
-  revalidatePath("/orders");
-  revalidatePath(`/orders/${id}`);
-  revalidatePath(`/orders/${id}/receipt`);
+  revalidateTag(TAGS.ORDERS);
+  revalidateTag(TAGS.DASHBOARD);
 }

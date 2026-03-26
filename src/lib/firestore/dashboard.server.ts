@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { adminDb } from "@/lib/firebase-admin";
+import { TAGS } from "@/lib/cache/tags";
 import type { Order } from "@/types/order";
 
 const COLLECTION = "orders";
@@ -17,7 +19,7 @@ function startOf(date: Date, unit: "day" | "week" | "month"): Date {
   d.setHours(0, 0, 0, 0);
   if (unit === "week") {
     const day = d.getDay();
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // Monday
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
   } else if (unit === "month") {
     d.setDate(1);
   }
@@ -34,7 +36,7 @@ export interface PendingBalance {
   customerName: string;
   customerId: string;
   balance: number;
-  settledAt: Date | null;
+  settledAt: string | null; // ISO string — safe for cache serialisation
 }
 
 export interface InTheStreet {
@@ -43,7 +45,7 @@ export interface InTheStreet {
   customerId: string;
   totalDelivered: number;
   totalDue: number;
-  createdAt: Date | null;
+  createdAt: string | null; // ISO string — safe for cache serialisation
 }
 
 export interface TopProduct {
@@ -62,13 +64,12 @@ export interface DashboardData {
   topProducts: TopProduct[];
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+async function _getDashboardDataRaw(): Promise<DashboardData> {
   const now = new Date();
   const todayStart = startOf(now, "day");
   const weekStart = startOf(now, "week");
   const monthStart = startOf(now, "month");
 
-  // Fetch all settled orders from start of month (for income metrics + top products)
   const [settledSnap, pendingSnap, streetSnap] = await Promise.all([
     adminDb
       .collection(COLLECTION)
@@ -89,22 +90,14 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const settledOrders = settledSnap.docs.map((d) => mapOrder(d.id, d.data()));
 
-  // Income summaries
   function summarize(orders: Order[], from: Date): IncomeSummary {
-    const filtered = orders.filter(
-      (o) => o.settledAt && o.settledAt >= from
-    );
+    const filtered = orders.filter((o) => o.settledAt && o.settledAt >= from);
     return {
       total: filtered.reduce((acc, o) => acc + o.amountPaid, 0),
       count: filtered.length,
     };
   }
 
-  const today = summarize(settledOrders, todayStart);
-  const week = summarize(settledOrders, weekStart);
-  const month = summarize(settledOrders, monthStart);
-
-  // Pending balances
   const pendingBalances: PendingBalance[] = pendingSnap.docs.map((d) => {
     const data = d.data();
     return {
@@ -112,11 +105,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       customerName: data.customerName,
       customerId: data.customerId,
       balance: data.balance,
-      settledAt: data.settledAt?.toDate() ?? null,
+      settledAt: data.settledAt?.toDate().toISOString() ?? null,
     };
   });
 
-  // In the street
   const inTheStreet: InTheStreet[] = streetSnap.docs.map((d) => {
     const data = d.data();
     return {
@@ -125,21 +117,19 @@ export async function getDashboardData(): Promise<DashboardData> {
       customerId: data.customerId,
       totalDelivered: data.totalDelivered,
       totalDue: data.totalDue,
-      createdAt: data.createdAt?.toDate() ?? null,
+      createdAt: data.createdAt?.toDate().toISOString() ?? null,
     };
   });
 
-  // Top products this month
   const productMap = new Map<string, TopProduct>();
   for (const order of settledOrders) {
     for (const item of order.items) {
       if (item.soldQty === 0) continue;
-      const key = item.code;
-      const existing = productMap.get(key);
+      const existing = productMap.get(item.code);
       if (existing) {
         existing.totalSold += item.soldQty;
       } else {
-        productMap.set(key, {
+        productMap.set(item.code, {
           code: item.code,
           description: item.description,
           ...(item.size ? { size: item.size } : {}),
@@ -148,9 +138,22 @@ export async function getDashboardData(): Promise<DashboardData> {
       }
     }
   }
-  const topProducts = Array.from(productMap.values())
-    .sort((a, b) => b.totalSold - a.totalSold)
-    .slice(0, 5);
 
-  return { today, week, month, pendingBalances, inTheStreet, topProducts };
+  return {
+    today: summarize(settledOrders, todayStart),
+    week: summarize(settledOrders, weekStart),
+    month: summarize(settledOrders, monthStart),
+    pendingBalances,
+    inTheStreet,
+    topProducts: Array.from(productMap.values())
+      .sort((a, b) => b.totalSold - a.totalSold)
+      .slice(0, 5),
+  };
 }
+
+// Revalidate every 60 s as safety net; actions call revalidateTag on mutations.
+export const getDashboardData = unstable_cache(
+  _getDashboardDataRaw,
+  [TAGS.DASHBOARD],
+  { tags: [TAGS.DASHBOARD], revalidate: 60 }
+);

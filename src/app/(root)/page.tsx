@@ -10,9 +10,10 @@ function fmt(n: number) {
   return n.toLocaleString("es-PY");
 }
 
-function daysSince(date: Date | null): string {
+function daysSince(date: Date | string | null): string {
   if (!date) return "";
-  const diff = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
   if (diff === 0) return "hoy";
   if (diff === 1) return "ayer";
   return `hace ${diff} días`;
