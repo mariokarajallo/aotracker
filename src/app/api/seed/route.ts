@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { adminDb } from "@/lib/firebase-admin";
+import { TAGS } from "@/lib/cache/tags";
 
 async function clearCollection(name: string) {
   const snap = await adminDb.collection(name).get();
@@ -270,6 +272,12 @@ export async function GET() {
     { lastNumber: orderSeq }
   );
   await orderBatch.commit();
+
+  // Invalidate server-side cache so lists show fresh IDs immediately
+  revalidateTag(TAGS.CUSTOMERS);
+  revalidateTag(TAGS.PRODUCTS);
+  revalidateTag(TAGS.ORDERS);
+  revalidateTag(TAGS.DASHBOARD);
 
   return NextResponse.json({
     ok: true,
