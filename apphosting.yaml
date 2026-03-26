@@ -52,6 +52,30 @@ env:
       - RUNTIME
 
   # Clerk
+  - variable: NEXT_PUBLIC_CLERK_SIGN_IN_URL
+    value: /sign-in
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_CLERK_SIGN_UP_URL
+    value: /sign-up
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
+    value: /
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
+    value: /
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
     value: pk_test_c2FjcmVkLWNhbWVsLTE5LmNsZXJrLmFjY291bnRzLmRldiQ
     availability:
