@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { recordPaymentAction } from "@/lib/actions/orders";
+import { formatMoney, formatMoneyInput, parseMoney } from "@/lib/utils";
 
 interface Props {
   orderId: string;
@@ -17,12 +18,12 @@ interface Props {
 
 export function CollectBalanceButton({ orderId, balance, grandTotal }: Props) {
   const router = useRouter();
-  const [amount, setAmount] = useState<string>(String(balance));
+  const [amount, setAmount] = useState<string>(formatMoney(balance));
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = parseFloat(amount);
+    const parsed = parseMoney(amount);
     if (!Number.isFinite(parsed) || parsed <= 0) return;
     setSaving(true);
     try {
@@ -62,11 +63,10 @@ export function CollectBalanceButton({ orderId, balance, grandTotal }: Props) {
           <Label htmlFor="collect-amount">Monto a cobrar</Label>
           <Input
             id="collect-amount"
-            type="number"
-            min={1}
-            max={grandTotal}
+            type="text"
+            inputMode="numeric"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(formatMoneyInput(e.target.value))}
             placeholder="0"
           />
         </div>
@@ -76,7 +76,7 @@ export function CollectBalanceButton({ orderId, balance, grandTotal }: Props) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setAmount(String(balance))}
+            onClick={() => setAmount(formatMoney(balance))}
           >
             Cobrar todo
           </Button>

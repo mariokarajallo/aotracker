@@ -15,6 +15,7 @@ import { productSchema, type ProductFormValues } from "../schemas/product.schema
 import { createProductAction, updateProductAction } from "@/lib/actions/products";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { getProductByCode } from "@/lib/firestore/products";
+import { formatMoney, formatMoneyInput, parseMoney } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
 interface ProductFormProps {
@@ -46,6 +47,12 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
   });
   const [marginInput, setMarginInput] = useState<string>(
     product ? calcMargin(product.costPrice, product.salePrice).toFixed(1) : ""
+  );
+  const [costPriceInput, setCostPriceInput] = useState<string>(
+    product ? formatMoney(product.costPrice) : ""
+  );
+  const [salePriceInput, setSalePriceInput] = useState<string>(
+    product ? formatMoney(product.salePrice) : ""
   );
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [saving, setSaving] = useState(false);
@@ -106,8 +113,9 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
     setMarginInput(raw);
     const pct = parseFloat(raw);
     if (!Number.isFinite(pct) || values.costPrice <= 0) return;
-    const sale = calcSaleFromMargin(values.costPrice, pct);
-    setValues((prev) => ({ ...prev, salePrice: Math.round(sale) }));
+    const sale = Math.round(calcSaleFromMargin(values.costPrice, pct));
+    setValues((prev) => ({ ...prev, salePrice: sale }));
+    setSalePriceInput(formatMoney(sale));
     if (errors.salePrice) setErrors((prev) => ({ ...prev, salePrice: undefined }));
   }
 
@@ -266,10 +274,14 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
               <Label htmlFor="costPrice">Costo *</Label>
               <Input
                 id="costPrice"
-                type="number"
-                min={0}
-                value={values.costPrice || ""}
-                onChange={(e) => handleChange("costPrice", parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={costPriceInput}
+                onChange={(e) => {
+                  const fmt = formatMoneyInput(e.target.value);
+                  setCostPriceInput(fmt);
+                  handleChange("costPrice", parseMoney(fmt));
+                }}
                 placeholder="0"
               />
               {errors.costPrice && <p className="text-sm text-destructive">{errors.costPrice}</p>}
@@ -279,10 +291,14 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
               <Label htmlFor="salePrice">Venta *</Label>
               <Input
                 id="salePrice"
-                type="number"
-                min={0}
-                value={values.salePrice || ""}
-                onChange={(e) => handleChange("salePrice", parseFloat(e.target.value) || 0)}
+                type="text"
+                inputMode="numeric"
+                value={salePriceInput}
+                onChange={(e) => {
+                  const fmt = formatMoneyInput(e.target.value);
+                  setSalePriceInput(fmt);
+                  handleChange("salePrice", parseMoney(fmt));
+                }}
                 placeholder="0"
               />
               {errors.salePrice && <p className="text-sm text-destructive">{errors.salePrice}</p>}

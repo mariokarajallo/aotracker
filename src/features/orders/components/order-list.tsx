@@ -41,21 +41,33 @@ function fmtNum(n: number): string {
   return `#${String(n).padStart(3, "0")}`;
 }
 
+const STATUS_FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "pending_settlement", label: "Aguardando acerto" },
+  { value: "settled_pending_balance", label: "Saldo pendiente" },
+  { value: "settled_zero_balance", label: "Saldo cero" },
+];
+
 export function OrderList({ initialData }: { initialData?: Order[] }) {
   const router = useRouter();
   const { orders, loading, error } = useOrders(initialData);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
+    let result = orders;
+    if (statusFilter !== "all") {
+      result = result.filter((o) => o.status === statusFilter);
+    }
     const q = search.toLowerCase().replace(/^#/, "");
-    if (!q) return orders;
-    return orders.filter(
+    if (!q) return result;
+    return result.filter(
       (o) =>
         o.customerName.toLowerCase().includes(q) ||
         String(o.orderNumber ?? "").includes(q)
     );
-  }, [orders, search]);
+  }, [orders, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -66,11 +78,34 @@ export function OrderList({ initialData }: { initialData?: Order[] }) {
     setPage(1);
   }
 
+  function handleStatusFilter(value: OrderStatus | "all") {
+    setStatusFilter(value);
+    setPage(1);
+  }
+
   if (loading) return <p className="text-muted-foreground">Cargando notas...</p>;
   if (error) return <p className="text-destructive">{error}</p>;
 
   return (
     <>
+      {/* Status filter */}
+      <div className="flex flex-wrap gap-2">
+        {STATUS_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => handleStatusFilter(opt.value)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+              statusFilter === opt.value
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-input hover:bg-muted"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {/* Search */}
       <div className="space-y-1">
         <div className="relative">

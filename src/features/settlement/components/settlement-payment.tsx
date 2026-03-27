@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useScanningStore } from "../store/scanning.store";
 import { updateOrderStatusAction } from "@/lib/actions/orders";
+import { formatMoney, formatMoneyInput, parseMoney } from "@/lib/utils";
 import type { Order, OrderStatus } from "@/types/order";
 
 interface SettlementPaymentProps {
@@ -21,8 +22,8 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
   const { items, penalty, amountPaid, setPenalty, setAmountPaid, totalDue, grandTotal, balance, reset } =
     useScanningStore();
   const [saving, setSaving] = useState(false);
-  const [penaltyInput, setPenaltyInput] = useState(penalty > 0 ? String(penalty) : "");
-  const [amountPaidInput, setAmountPaidInput] = useState(amountPaid > 0 ? String(amountPaid) : "");
+  const [penaltyInput, setPenaltyInput] = useState(penalty > 0 ? formatMoney(penalty) : "");
+  const [amountPaidInput, setAmountPaidInput] = useState(amountPaid > 0 ? formatMoney(amountPaid) : "");
 
   const currentGrandTotal = grandTotal();
   const isZeroSale = currentGrandTotal === 0;
@@ -100,12 +101,13 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
           <Label htmlFor="penalty">Multa / Recargo</Label>
           <Input
             id="penalty"
-            type="number"
-            min={0}
+            type="text"
+            inputMode="numeric"
             value={penaltyInput}
             onChange={(e) => {
-              setPenaltyInput(e.target.value);
-              setPenalty(parseFloat(e.target.value) || 0);
+              const fmt = formatMoneyInput(e.target.value);
+              setPenaltyInput(fmt);
+              setPenalty(parseMoney(fmt));
             }}
             placeholder="0"
             className="w-36 text-right"
@@ -126,12 +128,13 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
           <Label htmlFor="amountPaid">Monto recibido</Label>
           <Input
             id="amountPaid"
-            type="number"
-            min={0}
+            type="text"
+            inputMode="numeric"
             value={amountPaidInput}
             onChange={(e) => {
-              setAmountPaidInput(e.target.value);
-              setAmountPaid(parseFloat(e.target.value) || 0);
+              const fmt = formatMoneyInput(e.target.value);
+              setAmountPaidInput(fmt);
+              setAmountPaid(parseMoney(fmt));
             }}
             placeholder="0"
             autoFocus
