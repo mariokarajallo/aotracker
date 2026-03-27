@@ -4,6 +4,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { updateTag } from "next/cache";
 import { TAGS } from "@/lib/cache/tags";
 import type { ProductFormValues } from "@/features/catalog/schemas/product.schema";
+import type { Product } from "@/types/product";
 
 const COLLECTION = "products";
 
@@ -39,6 +40,37 @@ export async function updateProductAction(id: string, data: ProductFormValues): 
     updatedAt: new Date(),
   });
   updateTag(TAGS.PRODUCTS);
+}
+
+export async function quickAddProductAction(data: {
+  code: string;
+  description: string;
+  salePrice: number;
+  size?: string;
+}): Promise<Product> {
+  const now = new Date();
+  const ref = await adminDb.collection(COLLECTION).add({
+    code: data.code,
+    description: data.description,
+    ...(data.size ? { size: data.size } : {}),
+    costPrice: 0,
+    salePrice: data.salePrice,
+    margin: 0,
+    createdAt: now,
+    updatedAt: now,
+  });
+  updateTag(TAGS.PRODUCTS);
+  return {
+    id: ref.id,
+    code: data.code,
+    description: data.description,
+    ...(data.size ? { size: data.size } : {}),
+    costPrice: 0,
+    salePrice: data.salePrice,
+    margin: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export async function deleteProductAction(id: string): Promise<void> {

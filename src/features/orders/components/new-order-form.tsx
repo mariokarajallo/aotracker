@@ -11,6 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -20,7 +27,9 @@ import {
 } from "@/components/ui/table";
 import { Trash2, ScanBarcode, Pencil } from "lucide-react";
 import { createOrderAction } from "@/lib/actions/orders";
+import { quickAddProductAction } from "@/lib/actions/products";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { formatMoneyInput, parseMoney } from "@/lib/utils";
 import type { Customer } from "@/types/customer";
 import type { Product } from "@/types/product";
 import type { OrderItem } from "@/types/order";
@@ -28,16 +37,19 @@ import type { OrderItem } from "@/types/order";
 interface NewOrderFormProps {
   initialCustomers: Customer[];
   initialProducts: Product[];
+  initialCustomerId?: string;
 }
 
-export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderFormProps) {
+export function NewOrderForm({ initialCustomers, initialProducts, initialCustomerId }: NewOrderFormProps) {
   const router = useRouter();
   const scanInputRef = useRef<HTMLInputElement>(null);
 
   const [customers] = useState<Customer[]>(initialCustomers);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    () => initialCustomerId ? (initialCustomers.find((c) => c.id === initialCustomerId) ?? null) : null
+  );
   const [customerSearch, setCustomerSearch] = useState("");
-  const [products] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [scanCode, setScanCode] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -45,6 +57,14 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
   const [cameraOpen, setCameraOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Quick-add product dialog
+  const [unknownCode, setUnknownCode] = useState<string | null>(null);
+  const [quickDesc, setQuickDesc] = useState("");
+  const [quickSize, setQuickSize] = useState("");
+  const [quickPriceInput, setQuickPriceInput] = useState("");
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickErrors, setQuickErrors] = useState<{ description?: string; salePrice?: string }>({});
 
   const suggestions = scanCode.length > 1
     ? products.filter((p) =>
@@ -68,7 +88,11 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
     try {
       const product = products.find((p) => p.code === code.trim()) ?? null;
       if (!product) {
-        toast.error(`Producto no encontrado: ${code}`);
+        setUnknownCode(code.trim());
+        setQuickDesc("");
+        setQuickSize("");
+        setQuickPriceInput("");
+        setQuickErrors({});
         setScanCode("");
         return;
       }
@@ -110,7 +134,34 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
       setScanning(false);
       scanInputRef.current?.focus();
     }
-  }, [products]);
+  }, [products, setUnknownCode]);
+
+  async function handleQuickAdd() {
+    const errors: typeof quickErrors = {};
+    if (!quickDesc.trim()) errors.description = "La descripción es requerida";
+    const price = parseMoney(quickPriceInput);
+    if (!price || price <= 0) errors.salePrice = "El precio de venta es requerido";
+    if (Object.keys(errors).length > 0) { setQuickErrors(errors); return; }
+
+    setQuickSaving(true);
+    try {
+      const newProduct = await quickAddProductAction({
+        code: unknownCode!,
+        description: quickDesc.trim(),
+        salePrice: price,
+        ...(quickSize.trim() ? { size: quickSize.trim() } : {}),
+      });
+      setProducts((prev) => [...prev, newProduct]);
+      setUnknownCode(null);
+      // Scan it immediately after adding
+      await handleScan(newProduct.code);
+      toast.success(`${newProduct.description} creado y agregado a la nota`);
+    } catch {
+      toast.error("Error al crear el producto");
+    } finally {
+      setQuickSaving(false);
+    }
+  }
 
   function handleScanKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
@@ -257,6 +308,65 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
                 onClose={() => setCameraOpen(false)}
               />
             )}
+
+            {/* Quick-add product dialog */}
+            <Dialog open={!!unknownCode} onOpenChange={(open) => { if (!open) setUnknownCode(null); }}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Producto no encontrado</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  El código <span className="font-mono font-semibold text-foreground">{unknownCode}</span> no está en el catálogo. Completá los datos para agregarlo.
+                </p>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label>Código</Label>
+                    <Input value={unknownCode ?? ""} disabled />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="quick-desc">Descripción *</Label>
+                    <Input
+                      id="quick-desc"
+                      value={quickDesc}
+                      onChange={(e) => { setQuickDesc(e.target.value); setQuickErrors((p) => ({ ...p, description: undefined })); }}
+                      placeholder="Nombre del producto"
+                      autoFocus
+                    />
+                    {quickErrors.description && <p className="text-xs text-destructive">{quickErrors.description}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="quick-size">Talle</Label>
+                    <Input
+                      id="quick-size"
+                      value={quickSize}
+                      onChange={(e) => setQuickSize(e.target.value)}
+                      placeholder="S, M, L, 38..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="quick-price">Precio de venta *</Label>
+                    <Input
+                      id="quick-price"
+                      type="text"
+                      inputMode="numeric"
+                      value={quickPriceInput}
+                      onChange={(e) => { setQuickPriceInput(formatMoneyInput(e.target.value)); setQuickErrors((p) => ({ ...p, salePrice: undefined })); }}
+                      placeholder="0"
+                    />
+                    {quickErrors.salePrice && <p className="text-xs text-destructive">{quickErrors.salePrice}</p>}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">El costo y otros datos se pueden completar después desde el catálogo.</p>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setUnknownCode(null)} disabled={quickSaving}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleQuickAdd} disabled={quickSaving}>
+                    {quickSaving ? "Guardando..." : "Agregar producto"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {showSuggestions && suggestions.length > 0 && (
               <div className="border rounded-md divide-y">

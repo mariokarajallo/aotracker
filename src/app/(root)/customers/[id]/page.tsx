@@ -66,9 +66,16 @@ export default async function CustomerDetailPage({ params, searchParams }: Props
             {customer.status === "active" ? "Activa" : "Inactiva"}
           </Badge>
         </div>
-        <LinkButton href={`/customers/${id}?edit=true`} variant="outline" size="sm">
-          Editar
-        </LinkButton>
+        <div className="flex gap-2">
+          {customer.status === "active" && (
+            <LinkButton href={`/orders/new?customerId=${id}`} size="sm">
+              Nueva nota
+            </LinkButton>
+          )}
+          <LinkButton href={`/customers/${id}?edit=true`} variant="outline" size="sm">
+            Editar
+          </LinkButton>
+        </div>
       </div>
 
       {/* Info */}
