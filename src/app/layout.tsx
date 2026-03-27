@@ -23,11 +23,10 @@ export default function RootLayout({
   return (
     <ClerkProvider
       localization={esES}
-      allowedRedirectOrigins={
-        process.env.NEXT_PUBLIC_NGROK_URL
-          ? [process.env.NEXT_PUBLIC_NGROK_URL]
-          : []
-      }
+      allowedRedirectOrigins={[
+        process.env.NEXT_PUBLIC_NGROK_URL,
+        process.env.NEXT_PUBLIC_APP_URL,
+      ].filter(Boolean) as string[]}
     >
       <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
