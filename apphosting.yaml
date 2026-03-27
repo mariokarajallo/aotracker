@@ -2,45 +2,45 @@ runConfig:
   minInstances: 1
 
 env:
-  # Firebase Public Config
+  # Firebase Public Config — PRODUCTION (aotracker-prod)
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyCtZ6lthKXyZieJ1bmUHSjpAF63SCkG8Ks
+    value: AIzaSyCk5_d3vJf0t34d3wGXWV1ma0an_orkLHU
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: aotracker-adbd2.firebaseapp.com
+    value: aotracker-prod.firebaseapp.com
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: aotracker-adbd2
+    value: aotracker-prod
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: aotracker-adbd2.firebasestorage.app
+    value: aotracker-prod.firebasestorage.app
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "108454611842"
+    value: "184034506448"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: 1:108454611842:web:f1c652662a3565b5a05d9b
+    value: 1:184034506448:web:31e2bbf8d5831deb0d50d5
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: G-3HCLVLCBG6
+    value: G-YV6J39RDHB
     availability:
       - BUILD
       - RUNTIME
@@ -87,9 +87,9 @@ env:
     availability:
       - RUNTIME
 
-  # Firebase Admin SDK
+  # Firebase Admin SDK — PRODUCTION (aotracker-prod)
   - variable: FIREBASE_PROJECT_ID
-    value: aotracker-adbd2
+    value: aotracker-prod
     availability:
       - RUNTIME
 
