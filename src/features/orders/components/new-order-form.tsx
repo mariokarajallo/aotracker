@@ -82,6 +82,36 @@ export function NewOrderForm({ initialCustomers, initialProducts, initialCustome
   const totalDelivered = items.reduce((acc, i) => acc + i.deliveredQty, 0);
   const totalDue = items.reduce((acc, i) => acc + i.subtotal, 0);
 
+  function addProductToItems(product: Product) {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.productId === product.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.productId === product.id
+            ? {
+                ...i,
+                deliveredQty: i.deliveredQty + 1,
+                soldQty: i.deliveredQty + 1,
+                subtotal: (i.deliveredQty + 1) * i.salePrice,
+              }
+            : i
+        );
+      }
+      return [...prev, {
+        id: crypto.randomUUID(),
+        productId: product.id,
+        code: product.code,
+        description: product.description,
+        ...(product.size !== undefined && { size: product.size }),
+        salePrice: product.salePrice,
+        deliveredQty: 1,
+        returnedQty: 0,
+        soldQty: 1,
+        subtotal: product.salePrice,
+      }];
+    });
+  }
+
   const handleScan = useCallback(async (code: string) => {
     if (!code.trim()) return;
     setScanning(true);
@@ -97,35 +127,7 @@ export function NewOrderForm({ initialCustomers, initialProducts, initialCustome
         return;
       }
 
-      setItems((prev) => {
-        const existing = prev.find((i) => i.productId === product.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.productId === product.id
-              ? {
-                  ...i,
-                  deliveredQty: i.deliveredQty + 1,
-                  soldQty: i.deliveredQty + 1,
-                  subtotal: (i.deliveredQty + 1) * i.salePrice,
-                }
-              : i
-          );
-        }
-        const newItem: OrderItem = {
-          id: crypto.randomUUID(),
-          productId: product.id,
-          code: product.code,
-          description: product.description,
-          ...(product.size !== undefined && { size: product.size }),
-          salePrice: product.salePrice,
-          deliveredQty: 1,
-          returnedQty: 0,
-          soldQty: 1,
-          subtotal: product.salePrice,
-        };
-        return [...prev, newItem];
-      });
-
+      addProductToItems(product);
       toast.success(`${product.description} agregado`);
       setScanCode("");
     } catch {
@@ -134,7 +136,7 @@ export function NewOrderForm({ initialCustomers, initialProducts, initialCustome
       setScanning(false);
       scanInputRef.current?.focus();
     }
-  }, [products, setUnknownCode]);
+  }, [products]);
 
   async function handleQuickAdd() {
     const errors: typeof quickErrors = {};
@@ -152,9 +154,8 @@ export function NewOrderForm({ initialCustomers, initialProducts, initialCustome
         ...(quickSize.trim() ? { size: quickSize.trim() } : {}),
       });
       setProducts((prev) => [...prev, newProduct]);
+      addProductToItems(newProduct);
       setUnknownCode(null);
-      // Scan it immediately after adding
-      await handleScan(newProduct.code);
       toast.success(`${newProduct.description} creado y agregado a la nota`);
     } catch {
       toast.error("Error al crear el producto");
