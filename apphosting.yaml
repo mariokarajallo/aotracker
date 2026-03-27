@@ -45,6 +45,13 @@ env:
       - BUILD
       - RUNTIME
 
+  # App URL — used for Clerk allowedRedirectOrigins
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://aotracker--aotracker-prod.us-east4.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
+
   # Allowed emails (comma-separated)
   - variable: ALLOWED_EMAILS
     value: "maidirivas2003@gmail.com,mariokarajallo92@gmail.com,sbeardman92@gmail.com"
