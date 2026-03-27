@@ -20,7 +20,9 @@ import {
   flexRender,
   createColumnHelper,
 } from "@tanstack/react-table";
+import { ScanBarcode, Pencil } from "lucide-react";
 import { useScanningStore } from "../store/scanning.store";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 import type { Order } from "@/types/order";
 import type { OrderItem } from "@/types/order";
 
@@ -36,6 +38,8 @@ export function SettlementScanner({ order, onContinue }: SettlementScannerProps)
   const [scanCode, setScanCode] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [editingReturnId, setEditingReturnId] = useState<string | null>(null);
 
   const { items, initializeFromOrder, addReturn, updateReturnQty, totalDue } = useScanningStore();
 
@@ -114,17 +118,38 @@ export function SettlementScanner({ order, onContinue }: SettlementScannerProps)
     columnHelper.accessor("returnedQty", {
       header: () => <span className="text-center block">Devuelto</span>,
       cell: (info) => (
-        <div className="flex justify-center">
-          <Input
-            type="number"
-            min={0}
-            max={info.row.original.deliveredQty}
-            value={info.getValue()}
-            onChange={(e) =>
-              updateReturnQty(info.row.original.productId, parseInt(e.target.value) || 0)
-            }
-            className="w-16 text-center"
-          />
+        <div className="flex items-center justify-center gap-1">
+          {editingReturnId === info.row.original.productId ? (
+            <Input
+              type="number"
+              min={0}
+              max={info.row.original.deliveredQty}
+              defaultValue={info.getValue()}
+              autoFocus
+              className="w-16 text-center"
+              onBlur={(e) => {
+                const v = parseInt(e.target.value);
+                updateReturnQty(info.row.original.productId, Number.isFinite(v) ? Math.min(v, info.row.original.deliveredQty) : 0);
+                setEditingReturnId(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              }}
+            />
+          ) : (
+            <>
+              <span className="w-8 text-center font-semibold">{info.getValue()}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => setEditingReturnId(info.row.original.productId)}
+              >
+                <Pencil className="size-3" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     }),
@@ -196,7 +221,26 @@ export function SettlementScanner({ order, onContinue }: SettlementScannerProps)
         >
           Registrar
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={() => setCameraOpen(true)}
+          title="Escanear con cámara"
+        >
+          <ScanBarcode className="size-4" />
+        </Button>
       </div>
+
+      {cameraOpen && (
+        <BarcodeScanner
+          onScan={(code) => {
+            handleScan(code);
+            // No cerramos la cámara — seguimos escaneando
+          }}
+          onClose={() => setCameraOpen(false)}
+        />
+      )}
 
       {/* Mobile items */}
       <div className="sm:hidden space-y-2">
@@ -214,14 +258,37 @@ export function SettlementScanner({ order, onContinue }: SettlementScannerProps)
               <span className="text-muted-foreground">Vendido: <strong className="text-primary">{item.soldQty}</strong></span>
               <div className="flex items-center gap-1 ml-auto">
                 <span className="text-muted-foreground text-xs">Dev:</span>
-                <Input
-                  type="number"
-                  min={0}
-                  max={item.deliveredQty}
-                  value={item.returnedQty}
-                  onChange={(e) => updateReturnQty(item.productId, parseInt(e.target.value) || 0)}
-                  className="w-14 text-center h-8 text-sm"
-                />
+                {editingReturnId === item.productId ? (
+                  <Input
+                    type="number"
+                    min={0}
+                    max={item.deliveredQty}
+                    defaultValue={item.returnedQty}
+                    autoFocus
+                    className="w-14 text-center h-8 text-sm"
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      updateReturnQty(item.productId, Number.isFinite(v) ? Math.min(v, item.deliveredQty) : 0);
+                      setEditingReturnId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                  />
+                ) : (
+                  <>
+                    <span className="w-8 text-center font-semibold text-sm">{item.returnedQty}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7"
+                      onClick={() => setEditingReturnId(item.productId)}
+                    >
+                      <Pencil className="size-3" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

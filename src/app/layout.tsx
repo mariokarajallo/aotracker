@@ -21,7 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider localization={esES}>
+    <ClerkProvider
+      localization={esES}
+      allowedRedirectOrigins={
+        process.env.NEXT_PUBLIC_NGROK_URL
+          ? [process.env.NEXT_PUBLIC_NGROK_URL]
+          : []
+      }
+    >
       <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
           {children}

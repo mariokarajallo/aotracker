@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LinkButton } from "@/components/link-button";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ScanBarcode, AlertCircle, Loader2 } from "lucide-react";
 import { productSchema, type ProductFormValues } from "../schemas/product.schema";
 import { createProductAction, updateProductAction } from "@/lib/actions/products";
+import { BarcodeScanner } from "@/components/barcode-scanner";
+import { getProductByCode } from "@/lib/firestore/products";
 import type { Product } from "@/types/product";
 
 interface ProductFormProps {
@@ -45,6 +49,42 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
   );
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  // Duplicate code check
+  const [codeChecking, setCodeChecking] = useState(false);
+  const [duplicateProduct, setDuplicateProduct] = useState<Product | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const code = values.code.trim();
+
+    // Reset
+    setDuplicateProduct(null);
+
+    // Skip if empty, too short, or editing the same product
+    if (!code || code.length < 3) return;
+    if (isEditing && code === product.code) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setCodeChecking(true);
+      try {
+        const existing = await getProductByCode(code);
+        // If editing, ignore if it's the same product
+        if (existing && existing.id !== product?.id) {
+          setDuplicateProduct(existing);
+        }
+      } finally {
+        setCodeChecking(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [values.code, isEditing, product?.id, product?.code]);
 
   function handleChange(field: keyof ProductFormValues, value: string | number) {
     setValues((prev) => {
@@ -73,6 +113,8 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (duplicateProduct) return;
+
     const result = productSchema.safeParse(values);
     if (!result.success) {
       const fieldErrors: typeof errors = {};
@@ -110,15 +152,70 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="code">Código de barras *</Label>
-            <Input
-              id="code"
-              value={values.code}
-              onChange={(e) => handleChange("code", e.target.value)}
-              placeholder="Ej: RD00278 — escaneá o escribí manualmente"
-              autoFocus={!isEditing}
-            />
-            {errors.code && <p className="text-sm text-destructive">{errors.code}</p>}
+            <div className="flex gap-2">
+              <Input
+                id="code"
+                value={values.code}
+                onChange={(e) => handleChange("code", e.target.value)}
+                placeholder="Ej: RD00278 — escaneá o escribí manualmente"
+                autoFocus={!isEditing}
+                className={`flex-1 ${duplicateProduct ? "border-destructive focus-visible:ring-destructive" : ""}`}
+              />
+              {codeChecking ? (
+                <Button type="button" variant="outline" size="icon" disabled>
+                  <Loader2 className="size-4 animate-spin" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setScannerOpen(true)}
+                  title="Escanear con cámara"
+                >
+                  <ScanBarcode className="size-4" />
+                </Button>
+              )}
+            </div>
+
+            {duplicateProduct && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+                <div className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertCircle className="size-4 mt-0.5 shrink-0" />
+                  <span>Este código ya está registrado.</span>
+                </div>
+                <Link
+                  href={`/catalog/${duplicateProduct.id}`}
+                  className="flex items-center justify-between w-full rounded-md border border-destructive/30 bg-background px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {duplicateProduct.description}
+                      {duplicateProduct.size ? ` (${duplicateProduct.size})` : ""}
+                    </p>
+                    {duplicateProduct.brand && (
+                      <p className="text-xs text-muted-foreground">{duplicateProduct.brand}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-3 shrink-0">Ver producto →</span>
+                </Link>
+              </div>
+            )}
+
+            {errors.code && !duplicateProduct && (
+              <p className="text-sm text-destructive">{errors.code}</p>
+            )}
           </div>
+
+          {scannerOpen && (
+            <BarcodeScanner
+              onScan={(code) => {
+                handleChange("code", code);
+                setScannerOpen(false);
+              }}
+              onClose={() => setScannerOpen(false)}
+            />
+          )}
 
           <div className="space-y-1">
             <Label htmlFor="description">Descripción *</Label>
@@ -206,7 +303,7 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving || !!duplicateProduct || codeChecking}>
               {saving ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear producto"}
             </Button>
             <LinkButton variant="outline" href="/catalog">Cancelar</LinkButton>

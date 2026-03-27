@@ -18,8 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2 } from "lucide-react";
+import { Trash2, ScanBarcode, Pencil } from "lucide-react";
 import { createOrderAction } from "@/lib/actions/orders";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 import type { Customer } from "@/types/customer";
 import type { Product } from "@/types/product";
 import type { OrderItem } from "@/types/order";
@@ -41,6 +42,8 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
   const [scanCode, setScanCode] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const suggestions = scanCode.length > 1
@@ -234,7 +237,27 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
               >
                 Agregar
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setCameraOpen(true)}
+                title="Escanear con cámara"
+              >
+                <ScanBarcode className="size-4" />
+              </Button>
             </div>
+
+            {cameraOpen && (
+              <BarcodeScanner
+                onScan={(code) => {
+                  handleScan(code);
+                  // Scanner queda abierto para seguir escaneando
+                }}
+                onClose={() => setCameraOpen(false)}
+              />
+            )}
+
             {showSuggestions && suggestions.length > 0 && (
               <div className="border rounded-md divide-y">
                 {suggestions.map((p) => (
@@ -279,14 +302,39 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
                       </Button>
                     </div>
                     <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-muted-foreground">{item.salePrice.toLocaleString("es-PY")} × </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={item.deliveredQty}
-                        onChange={(e) => updateQty(item.id, parseInt(e.target.value))}
-                        className="w-16 text-center"
-                      />
+                      <span className="text-muted-foreground">{item.salePrice.toLocaleString("es-PY")} ×</span>
+                      <div className="flex items-center gap-1">
+                        {editingItemId === item.id ? (
+                          <Input
+                            type="number"
+                            min={1}
+                            defaultValue={item.deliveredQty}
+                            autoFocus
+                            className="w-16 text-center"
+                            onBlur={(e) => {
+                              const v = parseInt(e.target.value);
+                              if (Number.isFinite(v) && v >= 1) updateQty(item.id, v);
+                              setEditingItemId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <span className="w-8 text-center font-semibold">{item.deliveredQty}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-7"
+                              onClick={() => setEditingItemId(item.id)}
+                            >
+                              <Pencil className="size-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                       <span className="font-medium ml-auto">{item.subtotal.toLocaleString("es-PY")}</span>
                     </div>
                   </div>
@@ -317,13 +365,38 @@ export function NewOrderForm({ initialCustomers, initialProducts }: NewOrderForm
                           {item.salePrice.toLocaleString("es-PY")}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            min={1}
-                            value={item.deliveredQty}
-                            onChange={(e) => updateQty(item.id, parseInt(e.target.value))}
-                            className="w-16 text-center mx-auto"
-                          />
+                          <div className="flex items-center justify-center gap-1">
+                            {editingItemId === item.id ? (
+                              <Input
+                                type="number"
+                                min={1}
+                                defaultValue={item.deliveredQty}
+                                autoFocus
+                                className="w-16 text-center"
+                                onBlur={(e) => {
+                                  const v = parseInt(e.target.value);
+                                  if (Number.isFinite(v) && v >= 1) updateQty(item.id, v);
+                                  setEditingItemId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                }}
+                              />
+                            ) : (
+                              <>
+                                <span className="font-semibold">{item.deliveredQty}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-7"
+                                  onClick={() => setEditingItemId(item.id)}
+                                >
+                                  <Pencil className="size-3" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           {item.subtotal.toLocaleString("es-PY")}

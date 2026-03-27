@@ -21,6 +21,8 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
   const { items, penalty, amountPaid, setPenalty, setAmountPaid, totalDue, grandTotal, balance, reset } =
     useScanningStore();
   const [saving, setSaving] = useState(false);
+  const [penaltyInput, setPenaltyInput] = useState(penalty > 0 ? String(penalty) : "");
+  const [amountPaidInput, setAmountPaidInput] = useState(amountPaid > 0 ? String(amountPaid) : "");
 
   const currentGrandTotal = grandTotal();
   const isZeroSale = currentGrandTotal === 0;
@@ -100,8 +102,11 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
             id="penalty"
             type="number"
             min={0}
-            value={penalty || ""}
-            onChange={(e) => setPenalty(parseFloat(e.target.value) || 0)}
+            value={penaltyInput}
+            onChange={(e) => {
+              setPenaltyInput(e.target.value);
+              setPenalty(parseFloat(e.target.value) || 0);
+            }}
             placeholder="0"
             className="w-36 text-right"
           />
@@ -123,8 +128,11 @@ export function SettlementPayment({ order, onBack }: SettlementPaymentProps) {
             id="amountPaid"
             type="number"
             min={0}
-            value={amountPaid || ""}
-            onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+            value={amountPaidInput}
+            onChange={(e) => {
+              setAmountPaidInput(e.target.value);
+              setAmountPaid(parseFloat(e.target.value) || 0);
+            }}
             placeholder="0"
             autoFocus
           />

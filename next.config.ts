@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+const ngrokUrl = process.env.NGROK_URL?.replace(/^https?:\/\//, "");
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  ...(ngrokUrl ? { allowedDevOrigins: [ngrokUrl] } : {}),
 };
 
 export default nextConfig;
