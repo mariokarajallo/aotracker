@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { TAGS } from "@/lib/cache/tags";
 import type { Order, OrderItem, OrderStatus, PaymentRecord } from "@/types/order";
 
@@ -46,8 +46,8 @@ export async function createOrderAction(
     });
   });
 
-  revalidateTag(TAGS.ORDERS);
-  revalidateTag(TAGS.DASHBOARD);
+  updateTag(TAGS.ORDERS);
+  updateTag(TAGS.DASHBOARD);
   return orderId;
 }
 
@@ -86,8 +86,8 @@ export async function updateOrderStatusAction(
     settledAt: new Date(),
   });
 
-  revalidateTag(TAGS.ORDERS);
-  revalidateTag(TAGS.DASHBOARD);
+  updateTag(TAGS.ORDERS);
+  updateTag(TAGS.DASHBOARD);
 }
 
 export async function recordPaymentAction(id: string, amount: number): Promise<void> {
@@ -108,6 +108,6 @@ export async function recordPaymentAction(id: string, amount: number): Promise<v
     payments: FieldValue.arrayUnion(payment),
   });
 
-  revalidateTag(TAGS.ORDERS);
-  revalidateTag(TAGS.DASHBOARD);
+  updateTag(TAGS.ORDERS);
+  updateTag(TAGS.DASHBOARD);
 }
