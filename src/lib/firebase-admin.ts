@@ -3,7 +3,7 @@ import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 function parsePrivateKey(raw: string | undefined): string {
-  if (!raw) throw new Error("FIREBASE_PRIVATE_KEY is not set");
+  if (!raw) throw new Error("ADMIN_PRIVATE_KEY is not set");
   let key = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
   key = key.replace(/\\n/g, "\n");
   return key;
@@ -14,8 +14,8 @@ function getAdminApp(): App {
   return initializeApp({
     credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
+      clientEmail: process.env.ADMIN_CLIENT_EMAIL,
+      privateKey: parsePrivateKey(process.env.ADMIN_PRIVATE_KEY),
     }),
   });
 }

@@ -90,9 +90,24 @@ env:
       - RUNTIME
 
   # Firebase Admin SDK — PRODUCTION (aotracker-prod)
-  # CLERK_SECRET_KEY, FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY
-  # se configuran como variables de entorno en el panel de App Hosting
+  # CLERK_SECRET_KEY se configura via: firebase apphosting:secrets:set CLERK_SECRET_KEY
+  # ADMIN_CLIENT_EMAIL y ADMIN_PRIVATE_KEY se configuran via: firebase apphosting:secrets:set
   - variable: FIREBASE_PROJECT_ID
     value: aotracker-prod
+    availability:
+      - RUNTIME
+
+  - variable: CLERK_SECRET_KEY
+    secret: CLERK_SECRET_KEY
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_CLIENT_EMAIL
+    secret: ADMIN_CLIENT_EMAIL
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_PRIVATE_KEY
+    secret: ADMIN_PRIVATE_KEY
     availability:
       - RUNTIME
