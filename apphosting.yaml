@@ -47,7 +47,7 @@ env:
 
   # App URL — used for Clerk allowedRedirectOrigins
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://aotracker--aotracker-prod.us-east4.hosted.app
+    value: https://aotracker-pro-backend--aotracker-prod.us-central1.hosted.app
     availability:
       - BUILD
       - RUNTIME
