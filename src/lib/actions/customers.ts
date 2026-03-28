@@ -1,7 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { TAGS } from "@/lib/cache/tags";
 import type { CustomerFormValues } from "@/features/customers/schemas/customer.schema";
 
@@ -17,7 +17,7 @@ export async function createCustomerAction(data: CustomerFormValues): Promise<st
     status: "active",
     createdAt: new Date(),
   });
-  updateTag(TAGS.CUSTOMERS);
+  revalidateTag(TAGS.CUSTOMERS);
   return ref.id;
 }
 
@@ -32,10 +32,10 @@ export async function updateCustomerAction(
     address: data.address ?? "",
     notes: data.notes ?? "",
   });
-  updateTag(TAGS.CUSTOMERS);
+  revalidateTag(TAGS.CUSTOMERS);
 }
 
 export async function deactivateCustomerAction(id: string): Promise<void> {
   await adminDb.collection(COLLECTION).doc(id).update({ status: "inactive" });
-  updateTag(TAGS.CUSTOMERS);
+  revalidateTag(TAGS.CUSTOMERS);
 }
