@@ -25,12 +25,15 @@ async function _getProductsRaw(): Promise<Product[]> {
 
 async function _getProductBrandsRaw(): Promise<string[]> {
   const snapshot = await adminDb.collection(COLLECTION).select("brand").get();
-  const brands = new Set<string>();
+  const seen = new Map<string, string>(); // lowercase key → first stored casing
   snapshot.docs.forEach((doc) => {
     const brand = doc.get("brand");
-    if (brand && typeof brand === "string") brands.add(brand);
+    if (brand && typeof brand === "string" && brand.trim()) {
+      const key = brand.trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, brand.trim());
+    }
   });
-  return Array.from(brands).sort();
+  return Array.from(seen.values()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
 // ─── Cached ──────────────────────────────────────────────────────────────────

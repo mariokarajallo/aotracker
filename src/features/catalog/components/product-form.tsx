@@ -14,6 +14,7 @@ import { ScanBarcode, AlertCircle, Loader2 } from "lucide-react";
 import { productSchema, type ProductFormValues } from "../schemas/product.schema";
 import { createProductAction, updateProductAction } from "@/lib/actions/products";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { BrandInput } from "./brand-input";
 import { getProductByCode } from "@/lib/firestore/products";
 import { formatMoney, formatMoneyInput, parseMoney } from "@/lib/utils";
 import type { Product } from "@/types/product";
@@ -239,21 +240,13 @@ export function ProductForm({ product, brands = [] }: ProductFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="brand">Marca</Label>
-              <Input
+              <BrandInput
                 id="brand"
-                value={values.brand}
-                onChange={(e) => handleChange("brand", e.target.value)}
+                value={values.brand ?? ""}
+                onChange={(v) => handleChange("brand", v)}
+                brands={brands}
                 placeholder="Nike, Adidas..."
-                list="brand-options"
-                autoComplete="off"
               />
-              {brands.length > 0 && (
-                <datalist id="brand-options">
-                  {brands.map((b) => (
-                    <option key={b} value={b} />
-                  ))}
-                </datalist>
-              )}
             </div>
 
             <div className="space-y-1">
