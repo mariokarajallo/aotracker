@@ -93,7 +93,7 @@ env:
   # CLERK_SECRET_KEY se configura via: firebase apphosting:secrets:set CLERK_SECRET_KEY
   # ADMIN_CLIENT_EMAIL y ADMIN_PRIVATE_KEY se configuran via: firebase apphosting:secrets:set
   - variable: FIREBASE_PROJECT_ID
-    value: aotracker-prod
+    secret: FIREBASE_PROJECT_ID
     availability:
       - RUNTIME
 
