@@ -2,52 +2,52 @@ runConfig:
   minInstances: 1
 
 env:
-  # Firebase Public Config — PRODUCTION (aotracker-prod)
+  # Firebase Public Config — per-environment via secrets
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyCk5_d3vJf0t34d3wGXWV1ma0an_orkLHU
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: aotracker-prod.firebaseapp.com
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: aotracker-prod
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: aotracker-prod.firebasestorage.app
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "184034506448"
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: 1:184034506448:web:31e2bbf8d5831deb0d50d5
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: G-YV6J39RDHB
+    secret: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     availability:
       - BUILD
       - RUNTIME
 
   # App URL — used for Clerk allowedRedirectOrigins
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://aotracker-pro-backend--aotracker-prod.us-central1.hosted.app
+    secret: NEXT_PUBLIC_APP_URL
     availability:
       - BUILD
       - RUNTIME
@@ -89,9 +89,9 @@ env:
       - BUILD
       - RUNTIME
 
-  # Firebase Admin SDK — PRODUCTION (aotracker-prod)
-  # CLERK_SECRET_KEY se configura via: firebase apphosting:secrets:set CLERK_SECRET_KEY
-  # ADMIN_CLIENT_EMAIL y ADMIN_PRIVATE_KEY se configuran via: firebase apphosting:secrets:set
+  # Firebase Admin SDK — per-environment via secrets
+  # FIREBASE_PROJECT_ID, CLERK_SECRET_KEY, ADMIN_CLIENT_EMAIL, ADMIN_PRIVATE_KEY
+  # se configuran via: firebase apphosting:secrets:set <NAME> --project <PROJECT>
   - variable: FIREBASE_PROJECT_ID
     secret: FIREBASE_PROJECT_ID
     availability:
